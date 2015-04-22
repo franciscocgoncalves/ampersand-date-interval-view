@@ -2,10 +2,54 @@
   "name": "ampersand-date-interval-view",
   "version": "1.0.0",
   "description": "An Ampersand.js view module for date intervals.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+	"author": "Francisco Gonçalves <franciscocgoncalves@gmail.com>",
+  "license": "MIT",
+  "main": "ampersand-date-interval-view.js",
+	"scripts": {
+    "start": "run-browser test/index.js",
+    "test": "browserify test/index.js | tape-run | tap-spec",
+    "demo": "beefy demo.js -- -t browserify-css"
   },
-  "author": "Francisco Gonçalves <franciscocgoncalves@gmail.com>",
-  "license": "MIT"
+	"browserify": {
+    "transform": [
+      "ampersand-version"
+    ]
+  },
+	"dependencies": {
+    "amp-is-date": "^1.0.1",
+    "ampersand-version": "^1.0.1",
+    "ampersand-view": "^7.0.0",
+    "ampersand-pikaday-view": "https://github.com/franciscocgoncalves/ampersand-pikaday-view/tarball/master"
+  },
+	"devDependencies": {
+    "ampersand-form-view": "^2.2.0",
+    "beefy": "^2.1.1",
+    "browserify": "^5.10.1",
+    "browserify-css": "^0.2.0",
+    "function-bind": "^1.0.0",
+    "jshint": "^2.5.6",
+    "phantomjs": "^1.9.7-15",
+    "precommit-hook": "^1.0.7",
+    "run-browser": "^2.0.0",
+    "tap-spec": "^0.2.1",
+    "tape": "^2.14.0",
+    "tape-run": "^0.3.0"
+  },
+	"homepage": "https://github.com/franciscocgoncalves/ampersand-date-interval-view.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/franciscocgoncalves/ampersand-date-interval-view.git"
+  },
+	"bugs": {
+   "url": "https://github.com/franciscocgoncalves/ampersand-date-interval-view/issues"
+  },
+	"keywords": [
+    "forms",
+    "ampersand",
+    "browser"
+  ]
 }
+
+
+
+
