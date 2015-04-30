@@ -7,8 +7,8 @@ module.exports = View.extend ({
 	template: [
 		'<div class="form-group"><label data-hook="label"></label>',
 			'<div data-hook="form-container">',
-				'<div id="interval" class="date-controls"></div>',
 				'<div id="initial" class="date-controls"></div>',
+				'<div id="interval" class="date-controls"></div>',
 				'<div id="final" class="date-controls"></div>',
 			'</div>',
 		  '<div data-hook="message-container">',
@@ -44,27 +44,41 @@ module.exports = View.extend ({
 			}
 		],
 		'message': {
-					type: 'text',
-					hook: 'message-text'
-			},
+			type: 'text',
+			hook: 'message-text'
+		},
 		'showMessage': {
 			type: 'toggle',
 			hook: 'message-container'
 		},
+		'validityClass': {
+      type: 'class',
+      selector: 'input, textarea'
+    },
 	},
 		
 	initialize: function (spec) {
 		spec || (spec = {});
 		this.tests = this.tests || spec.tests || [];
+		
+		this.initialValue =  spec.initialDate || this.initialValue;
+		this.finalValue = spec.finalDate || this.finalValueDate;
+		
+		this.value = {
+			initialDate: this.initialValue,
+			finalDate: this.finalValue
+		};
+		
+		this.startingValue = this.value;
+		
 		if (spec.template) this.template = spec.template;
 
-		// will probably want this more selective, but for now, always validate
 		this.shouldValidate = true;
 	},
 		
 	render: function () {
 		var self = this;
-
+		
 		//call the parent first
 		View.prototype.render.apply(this);
 		this.initialDate = this.query('#initial');
@@ -98,46 +112,56 @@ module.exports = View.extend ({
 		
 		var finalFormView = new FormView({
 			el: this.finalDate,
-			fields: [this.finalDatePicker]
+			fields: [this.finalDatePicker],
 		});
 		
-		if(self.intervalValue) {
+		if(self.intervalOptional) {
 			this.interval = this.query('#interval');
 
 			this.intervalCheckbox = new CheckboxView({
 				name: 'interval',
 				label: 'With interval',
-				value: self.intervalValue || false,
+				value: false,
 				required: false,
 				validClass: 'input-valid',
-				invalidClass: 'input-invalid',
+				invalidClass: 'input-invalid', 
 				requiredMessage: 'This box must be checked.'
 			});
-
+			
 			var intervalFormView = new FormView({
 				el: this.interval,
 				fields: [this.intervalCheckbox]
 			});
-		}
+		}	
 	},
 		
 	props: {
+		value: 'any',
+		startingValue: 'any',
+				
 		name: 'string',
 		label: ['string', false, ''],
 
+		validClass: ['string', true, 'input-valid'],
+    invalidClass: ['string', true, 'input-invalid'],
+   	rootElementClass: ['string', true, ''],		
+		
 		initialValue: ['date', false, Date.now()],
 		initialMinDate: ['date', false, Date('01 January, 1970 UTC')],
 		initialMaxDate: ['date', false, Date('01 January, 2070 UTC')],
-
+		initialDatePicker: 'any',
+		
 		finalValue: ['date', false],
 		finalMinDate: ['date', false, Date('01 January, 1970 UTC')],
 		finalMaxDate: ['date', false, Date('01 January, 2070 UTC')],
-
+		finalDatePicker: 'any',
+		
 		showTime: ['boolean', false, true],
 		showSeconds: ['boolean', false, false],
 		use24hour: ['boolean', false, false],
 		
-		intervalValue: ['boolean', false, false]
+		intervalOptional: ['boolean', false, false],
+		intervalCheckbox: 'any'
 	},
 	
 	derived: {
@@ -160,15 +184,91 @@ module.exports = View.extend ({
         return this.shouldValidate && this.message;
       }
     },
+
+    validityClass: {
+      deps: ['valid', 'validClass', 'invalidClass', 'shouldValidate'],
+      fn: function () {
+        if (!this.shouldValidate) {
+          return '';
+        } 
+				else {
+        	return this.valid ? this.validClass : this.invalidClass;
+				}
+    	}
+    },
+		
+		initialDatePickerValid: {
+			deps:['initialDatePicker'],
+			cache: false,
+			fn: function() {
+				if (this.initialDatePicker && this.initialDatePicker !== null) {
+					return this.initialDatePicker.valid;
+				}
+			}
+		},
+		
+		finalDatePickerValid: {
+			deps:['finalDatePicker'],
+			cache: false,
+			fn: function() {
+				if (this.finalDatePicker && this.finalDatePicker !== null) {
+					return this.finalDatePicker.valid;
+				}
+			}
+		},
+		
+		intervalCheckboxValue: {
+			deps:['intervalCheckbox', 'finalDatePickerValid'],
+			cache: false,
+			fn: function() {
+				if (this.intervalCheckbox && this.intervalCheckbox !== null) {
+					this.finalDatePicker.required = this.intervalCheckbox.value;
+					return this.intervalCheckbox.value;
+				}
+				return null;
+			}
+		},
+		
+		valid: {
+			deps:['value', 'intervalCheckboxValue', 'initialDatePickerValid', 'finalDatePickerValid'],
+			cache: false,
+			fn: function() {	
+				if (this.intervalCheckboxValue !== null && !this.intervalCheckboxValue) {
+					this.value.finalDate = null;
+					
+					if(this.initialDatePickerValid) {
+						return this.initialDatePickerValid;	
+					}
+				}
+				else {
+					if (this.initialDatePickerValid && this.finalDatePickerValid) {
+						return this.initialDatePicker.value < this.finalDatePicker.value;
+					}
+				}
+				return false;
+			}
+		}
 	},
 	
 	required: function () {
 		var self = this;
-
-		if(!self.intervalValue) return true;
-		if(self.intervalCheckbox) {
+		
+		if(!self.intervalOptional) return true;
+		if(self.intervalCheckbox && self.intervalCheckbox !== null) {
 			return self.intervalCheckbox.value;
 		}
 		return false;
+	},
+	
+	setValue: function (value, skipValidation) {
+		this.value = value;
+	},
+
+	reset: function () {
+		this.setValue(this.startingValue);
+	},
+
+	clear: function () {
+		this.setValue();
 	}
 });
